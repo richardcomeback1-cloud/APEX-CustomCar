@@ -15,6 +15,33 @@ local nuiMouseEnabled = false
 
 isOpenByAdmin = false
 
+local function resetCustomUiInputAndCameraState()
+    SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
+    RenderScriptCams(false, false, 0, true, true)
+    DestroyAllCams(true)
+    ClearFocus()
+
+    customCamMain = nil
+    customCamSec = nil
+    renderingScriptCam = false
+end
+
+
+local function getNuiFocusState()
+    if type(GetNuiFocus) == 'function' then
+        local hasFocus, hasCursor = GetNuiFocus()
+        return hasFocus == true, hasCursor == true
+    end
+
+    if type(IsNuiFocused) == 'function' then
+        local hasFocus = IsNuiFocused() == true
+        return hasFocus, hasFocus
+    end
+
+    return false, false
+end
+
 local function getActionKey()
     return (Config and Config.Keys and Config.Keys.action and Config.Keys.action.key) or 38
 end
@@ -478,8 +505,8 @@ function openUI()
         radarWasVisible = not IsRadarHidden()
         DisplayRadar(false)
         nuiMouseEnabled = false
-        SetNuiFocus(true, false)
-        SetNuiFocusKeepInput(true)
+        SetNuiFocus(true, true)
+        SetNuiFocusKeepInput(false)
 
         pcall(function()
             exports['lizz_carhud']:ToggleDisplay(false)
@@ -532,13 +559,8 @@ function openUI()
 
         CreateThread(function()
             while (uiOpen) do
-                DisableAllControlActions(0)
-
-                EnableControlAction(0, 1, true)   -- mouse mv
-                EnableControlAction(0, 2, true)   -- mouse mv
-
-                EnableControlAction(0, 86, true)  -- horn
-                EnableControlAction(0, 249, true) -- voice
+                DisableControlAction(0, 1, true)
+                DisableControlAction(0, 2, true)
 
                 if (IsDisabledControlJustReleased(0, 26)) then
                     RenderScriptCams(not renderingScriptCam, true, 500, true, true)
@@ -562,8 +584,7 @@ function closeUI(sendToUI, resetVehToDefault)
         DisplayRadar(true)
     end
     nuiMouseEnabled = false
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
+    resetCustomUiInputAndCameraState()
 
     pcall(function()
         exports['lizz_carhud']:ToggleDisplay(true)
@@ -575,12 +596,6 @@ function closeUI(sendToUI, resetVehToDefault)
             type = 'close'
         })
     end
-
-    RenderScriptCams(false, true, 500, true, true)
-    renderingScriptCam = false
-    DestroyCam(customCamMain, true)
-    DestroyCam(customCamSec, true)
-    ClearFocus()
 
     if (resetVehToDefault == 1) then
         SetVehicleData(customVehicle, customVehicleData)
@@ -677,7 +692,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'toggleMouse') then
                 nuiMouseEnabled = data.enableMouse == true
                 SetNuiFocus(true, nuiMouseEnabled)
-                SetNuiFocusKeepInput(true)
+                SetNuiFocusKeepInput(false)
                 return
             elseif (data.user == 'enter') then
                 if (not data.menuId or not data.menuIndex) then return end
@@ -1093,6 +1108,18 @@ end
 
 CreateThread(function()
     while true do
+        local hasFocus, hasCursor = getNuiFocusState()
+        if hasFocus or hasCursor then
+            DisableControlAction(0, 1, true)
+            DisableControlAction(0, 2, true)
+        end
+
+        Wait(0)
+    end
+end)
+
+CreateThread(function()
+    while true do
         if uiOpen then
             updateCash()
             Wait(100)
@@ -1115,13 +1142,7 @@ AddEventHandler('onResourceStop', function(resource)
     if (resource == GetCurrentResourceName()) then
         if (uiOpen) then
             DisplayHud(true)
-            SetNuiFocus(false, false)
-            SetNuiFocusKeepInput(false)
-
-            RenderScriptCams(false, true, 500, true, true)
-            DestroyCam(customCamMain, true)
-            DestroyCam(customCamSec, true)
-            ClearFocus()
+            resetCustomUiInputAndCameraState()
 
             SetVehicleData(customVehicle, customVehicleData)
             FreezeEntityPosition(customVehicle, false)
