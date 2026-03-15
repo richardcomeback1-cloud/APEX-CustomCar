@@ -1,0 +1,360 @@
+.mech_ul .mech_img::before {
+  position: absolute;
+  content: '';
+  width: 10vh;
+  height: 10vh;
+  background-size: 100%;
+  filter: drop-shadow(0 .6vh 1.4vh rgba(0, 0, 0, 0.4));
+}
+
+.mech_ul.img_cosmatic .mech_img::before {
+  background: url(../img/icons/cosmatic.png) center bottom;
+  background-size: 100%;
+  width: 12vh;
+  height: 12vh;
+  mask-image: linear-gradient(90deg, transparent, black 35%);
+}
+
+.mech_ul.img_upgrade .mech_img::before {
+  background: url(../img/icons/upgrade.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
+
+.mech_ul.img_engine .mech_img::before {
+  background: url(../img/icons/engine.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_brakes .mech_img::before {
+  background: url(../img/icons/brakes.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_transmission .mech_img::before {
+  background: url(../img/icons/gear.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_suspension .mech_img::before {
+  background: url(../img/icons/suspension.png);
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
+
+.mech_ul.img_armor .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/armor.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_turbo .mech_img::before {
+  background: url(../img/icons/turbo.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_interior .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/interior.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_respray .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/respray.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_wheel .mech_img::before {
+  background: url(../img/icons/wheel.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_plate .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/plate.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_headlights .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/headlights.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_livery .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/livery.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_plus .mech_img::before {
+  width: 11vh;
+  height: 11vh;
+  background: url(../img/icons/plus.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_minus .mech_img::before {
+  width: 11vh;
+  height: 11vh;
+  background: url(../img/icons/minus.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_horn .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/horn.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_trunk .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/trunk.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_hydrulics .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/hydrulics.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_engine_block .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/engine_block.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_air_filter .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/air_filter.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_struts .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/struts.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_gas_tank .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/gas_tank.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_spoiler .mech_img::before {
+  background: url(../img/icons/spoiler.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
+
+.mech_ul.img_front_bumper .mech_img::before {
+  width: 15vh;
+  height: 15vh;
+  background: url(../img/icons/front_bumper.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_rear_bumper .mech_img::before {
+  width: 15vh;
+  height: 13vh;
+  background: url(../img/icons/rear_bumper.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_sideskirt .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/sideskirt.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_exhaust .mech_img::before {
+  background: url(../img/icons/exhaust.png) center bottom;
+  background-size: 100%;
+  width: 12vh;
+  height: 12vh;
+  mask-image: linear-gradient(-90deg, transparent, black 20%);
+}
+
+.mech_ul.img_rollcage .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/rollcage.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_grille .mech_img::before {
+  width: 12vh;
+  height: 12vh;
+  background: url(../img/icons/grille.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_hood .mech_img::before {
+  width: 14vh;
+  height: 13vh;
+  top: -1vh;
+  background: url(../img/icons/hood.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_leftfender .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/leftfender.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_rightfender .mech_img::before {
+  width: 12vh;
+  background: url(../img/icons/rightfender.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_roof .mech_img::before {
+  background: url(../img/icons/roof.png) center bottom;
+  background-size: 100%;
+  width: 14vh;
+  height: 14vh;
+}
+
+.mech_ul.img_archcover .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/archcover.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_aerials .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/aerials.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_wings .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/wings.png) center no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_door .mech_img::before {
+  background: url(../img/icons/door.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_dashboard .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/dashboard.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_dashboardColor .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  background: url(../img/icons/dashboardColor.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_speaker .mech_img::before {
+  background: url(../img/icons/speaker.png) center bottom;
+  background-size: 100%;
+  width: 12vh;
+  height: 12vh;
+}
+
+.mech_ul.img_seat .mech_img::before {
+  background: url(../img/icons/seat.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
+
+.mech_ul.img_steering_wheel .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/steering_wheel.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_shifter_leaver .mech_img::before {
+  width: 13vh;
+  height: 13vh;
+  background: url(../img/icons/shifter_leaver.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_ornaments .mech_img::before {
+  width: 14vh;
+  height: 11vh;
+  background: url(../img/icons/ornaments.png);
+  background-size: 100%;
+}
+
+.mech_ul.img_body .mech_img::before {
+  background: url(../img/icons/cosmatic.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+  top: 0.7vh;
+}
+
+.mech_ul.img_interiorColor .mech_img::before {
+  width: 14vh;
+  height: 14vh;
+  right: 1.5vh;
+  top: -2vh;
+  background: url(../img/icons/interiorColor.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_wheelfigma .mech_img::before {
+  width: 15vh;
+  height: 15vh;
+  right: 1.5vh;
+  top: -1.5vh;
+  background: url(../img/icons/wheelfigma.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_tireSmoke .mech_img::before {
+  background: url(../img/icons/tireSmoke.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
+
+.mech_ul.img_holder .mech_img::before {
+  width: 11vh;
+  height: 11vh;
+  background: url(../img/icons/holder.png) no-repeat;
+  background-size: 100%;
+}
+
+.mech_ul.img_neon .mech_img::before {
+  background: url(../img/icons/neon.png) center bottom;
+  background-size: 100%;
+  width: 13vh;
+  height: 13vh;
+}
