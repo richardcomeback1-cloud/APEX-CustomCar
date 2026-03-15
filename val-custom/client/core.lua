@@ -532,13 +532,16 @@ function openUI()
 
         CreateThread(function()
             while (uiOpen) do
-                DisableAllControlActions(0)
-
-                EnableControlAction(0, 1, true)   -- mouse mv
-                EnableControlAction(0, 2, true)   -- mouse mv
-
-                EnableControlAction(0, 86, true)  -- horn
-                EnableControlAction(0, 249, true) -- voice
+                DisableControlAction(0, 1, true)  -- LookLeftRight (mouse X)
+                DisableControlAction(0, 2, true)  -- LookUpDown (mouse Y)
+                DisableControlAction(0, 24, true) -- Attack
+                DisableControlAction(0, 25, true) -- Aim
+                DisableControlAction(0, 68, true) -- VehicleAttack
+                DisableControlAction(0, 69, true) -- VehicleAttack2
+                DisableControlAction(0, 70, true) -- VehicleAim
+                DisableControlAction(0, 92, true) -- VehiclePassengerAttack
+                DisableControlAction(0, 114, true) -- VehicleFlyAttack
+                DisableControlAction(0, 257, true) -- Attack2
 
                 if (IsDisabledControlJustReleased(0, 26)) then
                     RenderScriptCams(not renderingScriptCam, true, 500, true, true)
@@ -576,11 +579,15 @@ function closeUI(sendToUI, resetVehToDefault)
         })
     end
 
-    RenderScriptCams(false, true, 500, true, true)
+    RenderScriptCams(false, false, 0, true, true)
     renderingScriptCam = false
     DestroyCam(customCamMain, true)
     DestroyCam(customCamSec, true)
+    DestroyAllCams(true)
     ClearFocus()
+
+    customCamMain = nil
+    customCamSec = nil
 
     if (resetVehToDefault == 1) then
         SetVehicleData(customVehicle, customVehicleData)
@@ -1118,13 +1125,33 @@ AddEventHandler('onResourceStop', function(resource)
             SetNuiFocus(false, false)
             SetNuiFocusKeepInput(false)
 
-            RenderScriptCams(false, true, 500, true, true)
+            RenderScriptCams(false, false, 0, true, true)
             DestroyCam(customCamMain, true)
             DestroyCam(customCamSec, true)
+            DestroyAllCams(true)
             ClearFocus()
+
+            customCamMain = nil
+            customCamSec = nil
 
             SetVehicleData(customVehicle, customVehicleData)
             FreezeEntityPosition(customVehicle, false)
         end
     end
+end)
+
+AddEventHandler('onClientResourceStart', function(resource)
+    if resource ~= GetCurrentResourceName() then
+        return
+    end
+
+    uiOpen = false
+    nuiMouseEnabled = false
+    renderingScriptCam = false
+
+    SetNuiFocus(false, false)
+    SetNuiFocusKeepInput(false)
+    RenderScriptCams(false, false, 0, true, true)
+    DestroyAllCams(true)
+    ClearFocus()
 end)
