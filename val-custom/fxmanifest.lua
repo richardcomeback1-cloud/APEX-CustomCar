@@ -2,7 +2,8 @@ fx_version 'cerulean'
 games { 'gta5' }
 
 author 'VAL Script'
-description 'Custom Vehicle'
+name 'APEX-CustomCar'
+description 'APEX-CustomCar'
 version '2.0.0'
 
 lua54 'on'
