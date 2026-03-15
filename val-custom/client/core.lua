@@ -529,7 +529,6 @@ function openUI()
         renderingScriptCam = true
 
         uiOpen = true
-        SetPlayerControl(PlayerId(), false, 0)
 
         CreateThread(function()
             while (uiOpen) do
@@ -570,7 +569,6 @@ function closeUI(sendToUI, resetVehToDefault)
     nuiMouseEnabled = false
     SetNuiFocus(false, false)
     SetNuiFocusKeepInput(false)
-    SetPlayerControl(PlayerId(), true, 0)
 
     pcall(function()
         exports['lizz_carhud']:ToggleDisplay(true)
@@ -769,7 +767,7 @@ RegisterNUICallback('handle', function(data)
                 if (data.color ~= nil) then
                     local tempModType = string.sub(data.menuId, #'mod_' + 1)
                     local colorPrice = data.price or math.floor(customVehiclePrice * (data.priceMult or 1) / 500)
-                
+
                     if (customConfigPosIndex and customConfigPosIndex > 0 and customConfigPosIndex <= #Config.Positions and Config.Positions[customConfigPosIndex] and jobName ~= Config.Positions[customConfigPosIndex].whitelistJobName) then
                         colorPrice = math.floor(colorPrice * Config.PriceMultiplierWithoutTheJob)
                     end
@@ -781,7 +779,7 @@ RegisterNUICallback('handle', function(data)
 
                     if not isOpenByAdmin and colorPrice > 0 then
                         TriggerServerEvent('val-custom:removeCash', colorPrice)
-                    
+
                         local vehicleModel = GetEntityModel(customVehicle)
                         local vehDisplayName = GetDisplayNameFromVehicleModel(vehicleModel)
                         local sendToDiscord =
@@ -789,7 +787,7 @@ RegisterNUICallback('handle', function(data)
                             'ยานพาหนะ: ' .. GetLabelText(vehDisplayName) .. '\n' ..
                             'ป้ายทะเบียน: ' .. GetVehicleNumberPlateText(customVehicle) .. '\n' ..
                             'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(colorPrice)
-                    
+
                         pcall(function()
                             exports['azael_dc-serverlogs']:insertData({
                                 event = 'customCar',
@@ -797,13 +795,13 @@ RegisterNUICallback('handle', function(data)
                                 color = 2
                             })
                         end)
-                    
+
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
                             TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
                         end
                     end
-                    
+
                     -- ✅ อยู่นอก block ข้างบน!
                     if isOpenByAdmin then
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
@@ -1124,7 +1122,6 @@ AddEventHandler('onResourceStop', function(resource)
             DisplayHud(true)
             SetNuiFocus(false, false)
             SetNuiFocusKeepInput(false)
-            SetPlayerControl(PlayerId(), true, 0)
 
             RenderScriptCams(false, true, 500, true, true)
             DestroyCam(customCamMain, true)
