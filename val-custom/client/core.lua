@@ -479,7 +479,7 @@ function openUI()
         DisplayRadar(false)
         nuiMouseEnabled = false
         SetNuiFocus(true, false)
-        SetNuiFocusKeepInput(true)
+        SetNuiFocusKeepInput(false)
 
         pcall(function()
             exports['lizz_carhud']:ToggleDisplay(false)
@@ -684,7 +684,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'toggleMouse') then
                 nuiMouseEnabled = data.enableMouse == true
                 SetNuiFocus(true, nuiMouseEnabled)
-                SetNuiFocusKeepInput(true)
+                SetNuiFocusKeepInput(false)
                 return
             elseif (data.user == 'enter') then
                 if (not data.menuId or not data.menuIndex) then return end
