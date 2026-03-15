@@ -103,6 +103,60 @@ local function repairExteriorOnMenuOpen(vehicle)
     SetVehicleDirtLevel(vehicle, 0.0)
 end
 
+
+local function setCustomizationNuiFocus(enable, hasCursor, keepInput)
+    local focus = enable == true
+    local cursor = focus and (hasCursor == true) or false
+    local keep = focus and (keepInput == true) or false
+
+    SetNuiFocus(focus, cursor)
+    SetNuiFocusKeepInput(keep)
+end
+
+local function initializeCustomizationCameras(vehicle)
+    if not vehicle or vehicle == 0 or not DoesEntityExist(vehicle) then return end
+
+    local vehPos = GetEntityCoords(vehicle)
+    local camPos = GetOffsetFromEntityInWorldCoords(vehicle, -2.0, 5.0, 3.0)
+    local headingToObject = GetHeadingFromVector_2d(vehPos.x - camPos.x, vehPos.y - camPos.y)
+
+    if customCamMain and DoesCamExist(customCamMain) then
+        DestroyCam(customCamMain, true)
+    end
+
+    if customCamSec and DoesCamExist(customCamSec) then
+        DestroyCam(customCamSec, true)
+    end
+
+    customCamMain = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', camPos.x, camPos.y, camPos.z, -35.0, 0.0, headingToObject, GetGameplayCamFov(), false, 2)
+    customCamSec = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', camPos.x, camPos.y, camPos.z, -35.0, 0.0, headingToObject, GetGameplayCamFov(), false, 2)
+
+    SetCamActive(customCamMain, true)
+    RenderScriptCams(true, true, 500, true, true)
+    renderingScriptCam = true
+end
+
+local function toggleCustomizationCameraRender()
+    RenderScriptCams(not renderingScriptCam, true, 500, true, true)
+    renderingScriptCam = not renderingScriptCam
+end
+
+local function destroyCustomizationCameras()
+    RenderScriptCams(false, true, 500, true, true)
+    renderingScriptCam = false
+
+    if customCamMain and DoesCamExist(customCamMain) then
+        DestroyCam(customCamMain, true)
+    end
+
+    if customCamSec and DoesCamExist(customCamSec) then
+        DestroyCam(customCamSec, true)
+    end
+
+    customCamMain = nil
+    customCamSec = nil
+end
+
 local customTextUiState = {
     isOpen = false,
     key = nil,
@@ -262,6 +316,18 @@ local function applyUiLabelsToMenuConfig()
 end
 
 applyUiLabelsToMenuConfig()
+
+CreateThread(function()
+    while true do
+        if (not uiOpen) then
+            nuiMouseEnabled = false
+            setCustomizationNuiFocus(false, false, false)
+            Wait(500)
+        else
+            Wait(1000)
+        end
+    end
+end)
 
 CreateThread(function()
     for i = 1, #Config.Positions do
@@ -478,8 +544,8 @@ function openUI()
         radarWasVisible = not IsRadarHidden()
         DisplayRadar(false)
         nuiMouseEnabled = false
-        SetNuiFocus(true, false)
-        SetNuiFocusKeepInput(true)
+        uiOpen = true
+        setCustomizationNuiFocus(true, false, true)
 
         pcall(function()
             exports['lizz_carhud']:ToggleDisplay(false)
@@ -517,18 +583,7 @@ function openUI()
             whitelistJobName = whitelistJobName
         })
 
-        local vehPos = GetEntityCoords(customVehicle)
-        local camPos = GetOffsetFromEntityInWorldCoords(customVehicle, -2.0, 5.0, 3.0)
-        local headingToObject = GetHeadingFromVector_2d(vehPos.x - camPos.x, vehPos.y - camPos.y)
-
-        customCamMain = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', camPos.x, camPos.y, camPos.z, -35.0, 0.0, headingToObject, GetGameplayCamFov(), false, 2)
-        customCamSec = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', camPos.x, camPos.y, camPos.z, -35.0, 0.0, headingToObject, GetGameplayCamFov(), false, 2)
-
-        SetCamActive(customCamMain, true)
-        RenderScriptCams(true, true, 500, true, true)
-        renderingScriptCam = true
-
-        uiOpen = true
+        initializeCustomizationCameras(customVehicle)
 
         CreateThread(function()
             while (uiOpen) do
@@ -536,13 +591,12 @@ function openUI()
 
                 EnableControlAction(0, 1, true)   -- mouse mv
                 EnableControlAction(0, 2, true)   -- mouse mv
-
+                EnableControlAction(0, 74, true)  -- headlights
                 EnableControlAction(0, 86, true)  -- horn
                 EnableControlAction(0, 249, true) -- voice
 
                 if (IsDisabledControlJustReleased(0, 26)) then
-                    RenderScriptCams(not renderingScriptCam, true, 500, true, true)
-                    renderingScriptCam = not renderingScriptCam
+                    toggleCustomizationCameraRender()
                 end
 
                 Wait(0)
@@ -562,8 +616,8 @@ function closeUI(sendToUI, resetVehToDefault)
         DisplayRadar(true)
     end
     nuiMouseEnabled = false
-    SetNuiFocus(false, false)
-    SetNuiFocusKeepInput(false)
+    uiOpen = false
+    setCustomizationNuiFocus(false, false, false)
 
     pcall(function()
         exports['lizz_carhud']:ToggleDisplay(true)
@@ -576,10 +630,7 @@ function closeUI(sendToUI, resetVehToDefault)
         })
     end
 
-    RenderScriptCams(false, true, 500, true, true)
-    renderingScriptCam = false
-    DestroyCam(customCamMain, true)
-    DestroyCam(customCamSec, true)
+    destroyCustomizationCameras()
     ClearFocus()
 
     if (resetVehToDefault == 1) then
@@ -600,7 +651,6 @@ function closeUI(sendToUI, resetVehToDefault)
         isOpenByAdmin = false
     end
 
-    uiOpen = false
 end
 
 function updateMenu(menuId)
@@ -675,9 +725,13 @@ RegisterNUICallback('handle', function(data)
                 end
 
             elseif (data.user == 'toggleMouse') then
+                if (not uiOpen) then
+                    setCustomizationNuiFocus(false, false, false)
+                    return
+                end
+
                 nuiMouseEnabled = data.enableMouse == true
-                SetNuiFocus(true, nuiMouseEnabled)
-                SetNuiFocusKeepInput(true)
+                setCustomizationNuiFocus(true, nuiMouseEnabled, true)
                 return
             elseif (data.user == 'enter') then
                 if (not data.menuId or not data.menuIndex) then return end
@@ -762,7 +816,7 @@ RegisterNUICallback('handle', function(data)
                 if (data.color ~= nil) then
                     local tempModType = string.sub(data.menuId, #'mod_' + 1)
                     local colorPrice = data.price or math.floor(customVehiclePrice * (data.priceMult or 1) / 500)
-                
+
                     if (customConfigPosIndex and customConfigPosIndex > 0 and customConfigPosIndex <= #Config.Positions and Config.Positions[customConfigPosIndex] and jobName ~= Config.Positions[customConfigPosIndex].whitelistJobName) then
                         colorPrice = math.floor(colorPrice * Config.PriceMultiplierWithoutTheJob)
                     end
@@ -774,7 +828,7 @@ RegisterNUICallback('handle', function(data)
 
                     if not isOpenByAdmin and colorPrice > 0 then
                         TriggerServerEvent('val-custom:removeCash', colorPrice)
-                    
+
                         local vehicleModel = GetEntityModel(customVehicle)
                         local vehDisplayName = GetDisplayNameFromVehicleModel(vehicleModel)
                         local sendToDiscord =
@@ -782,7 +836,7 @@ RegisterNUICallback('handle', function(data)
                             'ยานพาหนะ: ' .. GetLabelText(vehDisplayName) .. '\n' ..
                             'ป้ายทะเบียน: ' .. GetVehicleNumberPlateText(customVehicle) .. '\n' ..
                             'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(colorPrice)
-                    
+
                         pcall(function()
                             exports['azael_dc-serverlogs']:insertData({
                                 event = 'customCar',
@@ -790,13 +844,13 @@ RegisterNUICallback('handle', function(data)
                                 color = 2
                             })
                         end)
-                    
+
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
                             TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
                         end
                     end
-                    
+
                     -- ✅ อยู่นอก block ข้างบน!
                     if isOpenByAdmin then
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
@@ -1115,12 +1169,10 @@ AddEventHandler('onResourceStop', function(resource)
     if (resource == GetCurrentResourceName()) then
         if (uiOpen) then
             DisplayHud(true)
-            SetNuiFocus(false, false)
-            SetNuiFocusKeepInput(false)
+            uiOpen = false
+            setCustomizationNuiFocus(false, false, false)
 
-            RenderScriptCams(false, true, 500, true, true)
-            DestroyCam(customCamMain, true)
-            DestroyCam(customCamSec, true)
+            destroyCustomizationCameras()
             ClearFocus()
 
             SetVehicleData(customVehicle, customVehicleData)
