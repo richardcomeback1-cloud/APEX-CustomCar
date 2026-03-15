@@ -477,8 +477,8 @@ function openUI()
         DisplayHud(false)
         radarWasVisible = not IsRadarHidden()
         DisplayRadar(false)
-        nuiMouseEnabled = false
-        SetNuiFocus(true, false)
+        nuiMouseEnabled = true
+        SetNuiFocus(true, true)
         SetNuiFocusKeepInput(false)
 
         pcall(function()
@@ -681,7 +681,7 @@ RegisterNUICallback('handle', function(data)
 
             elseif (data.user == 'toggleMouse') then
                 nuiMouseEnabled = data.enableMouse == true
-                SetNuiFocus(true, nuiMouseEnabled)
+                SetNuiFocus(true, true)
                 SetNuiFocusKeepInput(false)
                 return
             elseif (data.user == 'enter') then
