@@ -27,6 +27,21 @@ local function resetCustomUiInputAndCameraState()
     renderingScriptCam = false
 end
 
+
+local function getNuiFocusState()
+    if type(GetNuiFocus) == 'function' then
+        local hasFocus, hasCursor = GetNuiFocus()
+        return hasFocus == true, hasCursor == true
+    end
+
+    if type(IsNuiFocused) == 'function' then
+        local hasFocus = IsNuiFocused() == true
+        return hasFocus, hasFocus
+    end
+
+    return false, false
+end
+
 local function getActionKey()
     return (Config and Config.Keys and Config.Keys.action and Config.Keys.action.key) or 38
 end
@@ -1093,7 +1108,7 @@ end
 
 CreateThread(function()
     while true do
-        local hasFocus, hasCursor = GetNuiFocus()
+        local hasFocus, hasCursor = getNuiFocusState()
         if hasFocus or hasCursor then
             DisableControlAction(0, 1, true)
             DisableControlAction(0, 2, true)
