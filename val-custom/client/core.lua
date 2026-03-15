@@ -533,12 +533,17 @@ function openUI()
         CreateThread(function()
             while (uiOpen) do
                 DisableAllControlActions(0)
-
-                EnableControlAction(0, 1, true)   -- mouse mv
-                EnableControlAction(0, 2, true)   -- mouse mv
+                DisableAllControlActions(1)
+                DisableAllControlActions(2)
 
                 EnableControlAction(0, 86, true)  -- horn
                 EnableControlAction(0, 249, true) -- voice
+
+                DisablePlayerFiring(PlayerId(), true)
+                DisableControlAction(0, 24, true) -- attack
+                DisableControlAction(0, 25, true) -- aim
+                DisableControlAction(0, 37, true) -- weapon wheel
+                DisableControlAction(0, 75, true) -- exit vehicle
 
                 if (IsDisabledControlJustReleased(0, 26)) then
                     RenderScriptCams(not renderingScriptCam, true, 500, true, true)
