@@ -12,6 +12,7 @@ local renderingScriptCam = false
 local radarWasVisible = true
 local lastUiCash = nil
 local nuiMouseEnabled = false
+local runtimeMenus = {}
 
 isOpenByAdmin = false
 
@@ -54,6 +55,18 @@ local function getVectorDistanceSquared(a, b)
     local dy = a.y - b.y
     local dz = a.z - b.z
     return (dx * dx) + (dy * dy) + (dz * dz)
+end
+
+local function resetRuntimeMenus()
+    runtimeMenus = {}
+end
+
+local function getMenuDefinition(menuId)
+    if menuId == nil then
+        return nil
+    end
+
+    return runtimeMenus[menuId] or Config.Menus[menuId]
 end
 
 
@@ -563,7 +576,9 @@ function openUI()
         updateCash(true)
         updateVehicleCard(customVehicle)
 
-        local menu = clearMenu(Config.Menus['main'])
+        resetRuntimeMenus()
+
+        local menu = clearMenu(getMenuDefinition('main'))
         local newOptions = optionsShouldShow(menu)
         local uiMenuTitle = applyUiLabels('main', menu.title, newOptions)
         local whitelistJobName = nil
@@ -609,6 +624,7 @@ end
 function closeUI(sendToUI, resetVehToDefault)
     sendToUI = sendToUI or 0
     resetVehToDefault = resetVehToDefault or 0
+    resetRuntimeMenus()
 
     DisplayHud(true)
     if radarWasVisible then
@@ -653,9 +669,10 @@ function closeUI(sendToUI, resetVehToDefault)
 end
 
 function updateMenu(menuId)
-    if (menuId == nil or Config.Menus[menuId] == nil) then return end
+    local menuConfig = getMenuDefinition(menuId)
+    if (menuId == nil or menuConfig == nil) then return end
 
-    local menu = clearMenu(Config.Menus[menuId])
+    local menu = clearMenu(menuConfig)
 
     local newOptions = optionsShouldShow(menu)
     local uiMenuTitle = applyUiLabels(menuId, menu.title, newOptions)
@@ -706,7 +723,7 @@ RegisterNUICallback('handle', function(data)
             if (data.user == 'hover') then
                 if (not data or not data.menuId or not data.menuIndex) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 playSound('Faster_Click', 'RESPAWN_ONLINE_SOUNDSET')
@@ -735,7 +752,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'enter') then
                 if (not data.menuId or not data.menuIndex) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 local newOptions = optionsShouldShow(menu)
@@ -881,7 +898,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'backspace') then
                 if (not data.menuId) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 playSound('Lose_1st', 'GTAO_FM_Events_Soundset')
@@ -926,13 +943,16 @@ function optionsShouldShow(menu)
         end
 
         if (shouldShow and menu.options[i].openSubMenu ~= nil) then
-            local subMenu = Config.Menus[menu.options[i].openSubMenu]
+            local subMenu = getMenuDefinition(menu.options[i].openSubMenu)
             local tempShouldShow = false
-            for i = 1, #subMenu.options, 1 do
-                if (subMenu.options[i].modType ~= nil) then
-                    if (GetNumVehicleModData(customVehicle, subMenu.options[i].modType) >= 0 or subMenu.options[i].openSubMenu ~= nil) then
-                        tempShouldShow = true
-                        break
+
+            if type(subMenu) == 'table' and type(subMenu.options) == 'table' then
+                for j = 1, #subMenu.options, 1 do
+                    if (subMenu.options[j].modType ~= nil) then
+                        if (GetNumVehicleModData(customVehicle, subMenu.options[j].modType) >= 0 or subMenu.options[j].openSubMenu ~= nil) then
+                            tempShouldShow = true
+                            break
+                        end
                     end
                 end
             end
@@ -965,7 +985,7 @@ function createMenu(menuId, menuOption)
         curOptionOptionIndex = curOption
     end
 
-    Config.Menus[newMenuId] = {
+    runtimeMenus[newMenuId] = {
         title = menuOption.label,
         options = {},
         onBack = function()
@@ -979,7 +999,7 @@ function createMenu(menuId, menuOption)
     }
 
     if (menuOption.customType == 'color' or menuOption.customType == 'customColor') then
-        Config.Menus[newMenuId].title = ''
+        runtimeMenus[newMenuId].title = ''
         return
     end
 
@@ -1007,7 +1027,7 @@ function createMenu(menuId, menuOption)
             end
         end
 
-        table.insert(Config.Menus[newMenuId].options, {
+        table.insert(runtimeMenus[newMenuId].options, {
             label = tempLabel,
             uiMenuTitle = getMenuTitleForUi(newMenuId, menuOption.label),
             img = menuOption.img,
@@ -1026,13 +1046,13 @@ function createMenu(menuId, menuOption)
         })
 
         if (menuOption.modType == 11 or menuOption.modType == 18) then
-            local tempOption = Config.Menus[newMenuId].options[#Config.Menus[newMenuId].options]
+            local tempOption = runtimeMenus[newMenuId].options[#runtimeMenus[newMenuId].options]
             tempOption.onHover = function()
                 SetVehicleModData(customVehicle, menuOption.modType, i)
                 TaskVehicleTempAction(cache.ped, customVehicle, 31, 2000)
             end
         elseif (menuOption.modType == 'extras') then
-            local tempOption = Config.Menus[newMenuId].options[#Config.Menus[newMenuId].options]
+            local tempOption = runtimeMenus[newMenuId].options[#runtimeMenus[newMenuId].options]
 
             local isTempExtraOn = GetVehicleCurrentMod(customVehicle, 'extras', (i + 1))
 
@@ -1042,7 +1062,7 @@ function createMenu(menuId, menuOption)
             tempOption.onSelect = function()
                 isTempExtraOn = GetVehicleCurrentMod(customVehicle, 'extras', (i + 1))
 
-                Config.Menus['extras_on_off'] = {
+                runtimeMenus['extras_on_off'] = {
                     title = 'EXTRA ' .. tostring(i + 1),
                     options = {
                         {
@@ -1056,8 +1076,8 @@ function createMenu(menuId, menuOption)
                             onSelect = function()
                                 customVehicleData = GetVehicleData(customVehicle)
 
-                                Config.Menus['extras_on_off'].options[1].price = -1
-                                Config.Menus['extras_on_off'].options[2].price = tempPrice
+                                runtimeMenus['extras_on_off'].options[1].price = -1
+                                runtimeMenus['extras_on_off'].options[2].price = tempPrice
 
                                 updateMenu('extras_on_off')
 
@@ -1075,8 +1095,8 @@ function createMenu(menuId, menuOption)
                             onSelect = function()
                                 customVehicleData = GetVehicleData(customVehicle)
 
-                                Config.Menus['extras_on_off'].options[1].price = tempPrice
-                                Config.Menus['extras_on_off'].options[2].price = -1
+                                runtimeMenus['extras_on_off'].options[1].price = tempPrice
+                                runtimeMenus['extras_on_off'].options[2].price = -1
 
                                 updateMenu('extras_on_off')
 
@@ -1089,10 +1109,10 @@ function createMenu(menuId, menuOption)
                 }
 
                 if (isTempExtraOn == 0) then
-                    Config.Menus['extras_on_off'].options[2].price = -1
-                    Config.Menus['extras_on_off'].defaultOption = 1
+                    runtimeMenus['extras_on_off'].options[2].price = -1
+                    runtimeMenus['extras_on_off'].defaultOption = 1
                 else
-                    Config.Menus['extras_on_off'].options[1].price = -1
+                    runtimeMenus['extras_on_off'].options[1].price = -1
                 end
 
                 updateMenu('extras_on_off')
