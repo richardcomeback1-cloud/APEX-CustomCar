@@ -16,7 +16,9 @@ CreateThread(function()
     PlayerData = ESX.PlayerData
 
     jobName = getJobName()
-    updateUICurrentJob()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
     if updateCash then
         updateCash(true)
     end
@@ -26,7 +28,9 @@ RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
     PlayerData = xPlayer
     jobName = getJobName()
-    updateUICurrentJob()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
     if updateCash then
         updateCash(true)
     end
@@ -37,7 +41,9 @@ AddEventHandler('esx:setJob', function(job)
     PlayerData.job = job
 
     jobName = getJobName()
-    updateUICurrentJob()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
 end)
 
 function getJobName()

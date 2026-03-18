@@ -348,13 +348,13 @@ local function setupCustomizationPoints()
             positionIndex = i,
         })
 
-        function positionPoints[i]:onExit()
+        positionPoints[i].onExit = function(self)
             if not uiOpen then
                 hideCustomTextUI()
             end
         end
 
-        function positionPoints[i]:nearby()
+        positionPoints[i].nearby = function(self)
             if uiOpen then
                 return
             end
