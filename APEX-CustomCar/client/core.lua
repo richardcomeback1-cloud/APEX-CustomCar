@@ -33,6 +33,29 @@ local function isPlayerDead(ped)
     return IsEntityDead(ped) or IsPedFatallyInjured(ped)
 end
 
+local function getPerformanceConfig()
+    return Config.Performance or {}
+end
+
+local function getDistanceSleepFar()
+    return getPerformanceConfig().distanceSleepFar or 1000
+end
+
+local function getDistanceSleepNear()
+    return getPerformanceConfig().distanceSleepNear or 250
+end
+
+local function getDistanceSleepInteract()
+    return getPerformanceConfig().distanceSleepInteract or 0
+end
+
+local function getVectorDistanceSquared(a, b)
+    local dx = a.x - b.x
+    local dy = a.y - b.y
+    local dz = a.z - b.z
+    return (dx * dx) + (dy * dy) + (dz * dz)
+end
+
 
 local function getPlayerCash()
     local cash = nil
@@ -292,31 +315,6 @@ local function applyUiLabels(menuId, menuTitle, options)
 end
 
 
-local function applyUiLabelsToMenuConfig()
-    if type(Config) ~= 'table' or type(Config.Menus) ~= 'table' then return end
-
-    for menuId, menuData in pairs(Config.Menus) do
-        if type(menuData) == 'table' then
-            if menuData.title ~= nil then
-                menuData.title = getMenuTitleForUi(menuId, menuData.title)
-            end
-
-            if type(menuData.options) == 'table' then
-                for i = 1, #menuData.options do
-                    local option = menuData.options[i]
-                    if option then
-                        local originalLabel = option.label
-                        option.label = getOptionLabelForUi(menuId, originalLabel)
-                        option.labelTH = getOptionSubLabelForUi(originalLabel, option.labelTH)
-                    end
-                end
-            end
-        end
-    end
-end
-
-applyUiLabelsToMenuConfig()
-
 CreateThread(function()
     while true do
         if (not uiOpen) then
@@ -357,7 +355,7 @@ CreateThread(function()
     local playerPed, playerVeh
 
     while true do
-        waitTime = 1000
+        waitTime = getDistanceSleepFar()
         playerPed = PlayerPedId()
         playerVeh = GetVehiclePedIsIn(playerPed, false)
 
@@ -371,12 +369,13 @@ CreateThread(function()
             for i = 1, #Config.Positions do
                 local tempPos = Config.Positions[i]
                 if not tempPos.whitelistJobName or jobName == tempPos.whitelistJobName then
-                    local dist = Vdist(playerPos.x, playerPos.y, playerPos.z, tempPos.pos.x, tempPos.pos.y, tempPos.pos.z)
                     local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
+                    local actionDistSq = actionDist * actionDist
+                    local distSq = getVectorDistanceSquared(playerPos, tempPos.pos)
 
                     local marker = tempPos.marker
-                    if marker and marker.enable and dist <= marker.drawDistance then
-                        waitTime = 0
+                    if marker and marker.enable and distSq <= ((marker.drawDistance or 0.0) * (marker.drawDistance or 0.0)) then
+                        waitTime = math.min(waitTime, getDistanceSleepNear())
                         DrawMarker(
                             marker.type,
                             tempPos.pos.x + marker.positionOffset.x,
@@ -386,7 +385,7 @@ CreateThread(function()
                             marker.rotation.x, marker.rotation.y, marker.rotation.z,
                             marker.scale.x, marker.scale.y, marker.scale.z,
                             marker.color.r, marker.color.g, marker.color.b, marker.color.a,
-                            (marker.bobUpAndDownAlways or (marker.bobUpAndDownOnAccess and dist <= actionDist)),
+                            (marker.bobUpAndDownAlways or (marker.bobUpAndDownOnAccess and distSq <= actionDistSq)),
                             marker.faceCamera,
                             2,
                             marker.rotating,
@@ -394,8 +393,8 @@ CreateThread(function()
                         )
                     end
 
-                    if dist <= actionDist and isInVehicle then
-                        waitTime = 0
+                    if distSq <= actionDistSq and isInVehicle then
+                        waitTime = getDistanceSleepInteract()
 
                         local isDriver = (GetPedInVehicleSeat(playerVeh, -1) == playerPed)
 
@@ -434,7 +433,7 @@ CreateThread(function()
                 else
                     local currentPos = GetEntityCoords(customVehicle)
                     local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
-                    if Vdist(currentPos.x, currentPos.y, currentPos.z, tempPos.pos.x, tempPos.pos.y, tempPos.pos.z) > actionDist then
+                    if getVectorDistanceSquared(currentPos, tempPos.pos) > (actionDist * actionDist) then
                         closeUI(1, 1)
                     end
                 end
@@ -561,7 +560,7 @@ function openUI()
             end
         end
 
-        updateCash()
+        updateCash(true)
         updateVehicleCard(customVehicle)
 
         local menu = clearMenu(Config.Menus['main'])
@@ -1144,17 +1143,6 @@ function updateUICurrentJob()
     })
 end
 
-
-CreateThread(function()
-    while true do
-        if uiOpen then
-            updateCash()
-            Wait(100)
-        else
-            Wait(500)
-        end
-    end
-end)
 
 exports('openMenuByAdmin', function()
     isOpenByAdmin = true

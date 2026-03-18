@@ -11,3 +11,17 @@ Config.ExportResources = {
     playerHUD = 'lizz_playerhud',
     serverLogs = 'azael_dc-serverlogs'
 }
+
+Config.Performance = {
+    distanceSleepFar = 1000,
+    distanceSleepNear = 250,
+    distanceSleepInteract = 0
+}
+
+Config.Validation = {
+    maxChargeAmount = 5000000,
+    maxPropsPayloadBytes = 65535,
+    removeCashCooldownMs = 150,
+    updatePropsCooldownMs = 250,
+    getPropsCooldownMs = 200
+}

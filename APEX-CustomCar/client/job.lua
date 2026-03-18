@@ -17,11 +17,19 @@ CreateThread(function()
 
     jobName = getJobName()
     updateUICurrentJob()
+    if updateCash then
+        updateCash(true)
+    end
 end)
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
     PlayerData = xPlayer
+    jobName = getJobName()
+    updateUICurrentJob()
+    if updateCash then
+        updateCash(true)
+    end
 end)
 
 RegisterNetEvent('esx:setJob')
@@ -49,6 +57,10 @@ AddEventHandler('esx:setMoney', function(money)
 
     if ESX and ESX.PlayerData then
         ESX.PlayerData.money = PlayerData.money
+    end
+
+    if updateCash then
+        updateCash(true)
     end
 end)
 
@@ -91,5 +103,9 @@ AddEventHandler('esx:setAccountMoney', function(account)
             name = account.name,
             money = accountMoney
         }
+    end
+
+    if updateCash then
+        updateCash(true)
     end
 end)
