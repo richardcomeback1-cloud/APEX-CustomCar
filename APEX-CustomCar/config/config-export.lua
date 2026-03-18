@@ -15,6 +15,7 @@ Config.ExportResources = {
 Config.Performance = {
     distanceSleepFar = 1000,
     distanceSleepNear = 250,
+    distanceSleepMarkerVisible = 0,
     distanceSleepInteract = 0
 }
 

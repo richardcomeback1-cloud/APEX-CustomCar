@@ -46,6 +46,10 @@ local function getDistanceSleepNear()
     return getPerformanceConfig().distanceSleepNear or 250
 end
 
+local function getDistanceSleepMarkerVisible()
+    return getPerformanceConfig().distanceSleepMarkerVisible or 0
+end
+
 local function getDistanceSleepInteract()
     return getPerformanceConfig().distanceSleepInteract or 0
 end
@@ -388,7 +392,7 @@ CreateThread(function()
 
                     local marker = tempPos.marker
                     if marker and marker.enable and distSq <= ((marker.drawDistance or 0.0) * (marker.drawDistance or 0.0)) then
-                        waitTime = math.min(waitTime, getDistanceSleepNear())
+                        waitTime = math.min(waitTime, getDistanceSleepMarkerVisible())
                         DrawMarker(
                             marker.type,
                             tempPos.pos.x + marker.positionOffset.x,
