@@ -13,6 +13,7 @@ local radarWasVisible = true
 local lastUiCash = nil
 local nuiMouseEnabled = false
 local runtimeMenus = {}
+local positionPoints = {}
 
 isOpenByAdmin = false
 
@@ -36,22 +37,6 @@ end
 
 local function getPerformanceConfig()
     return Config.Performance or {}
-end
-
-local function getDistanceSleepFar()
-    return getPerformanceConfig().distanceSleepFar or 1000
-end
-
-local function getDistanceSleepNear()
-    return getPerformanceConfig().distanceSleepNear or 250
-end
-
-local function getDistanceSleepMarkerVisible()
-    return getPerformanceConfig().distanceSleepMarkerVisible or 0
-end
-
-local function getDistanceSleepInteract()
-    return getPerformanceConfig().distanceSleepInteract or 0
 end
 
 local function getVectorDistanceSquared(a, b)
@@ -337,24 +322,14 @@ CreateThread(function()
         if (not uiOpen) then
             nuiMouseEnabled = false
             setCustomizationNuiFocus(false, false, false)
-            Wait(500)
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
         else
-            Wait(1000)
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
         end
     end
 end)
 
-CreateThread(function()
-    for i = 1, #Config.Positions do
-        local marker = Config.Positions[i].marker or {}
-        for k, v in pairs(Config.DefaultMarker) do
-            if marker[k] == nil then
-                marker[k] = v
-            end
-        end
-        Config.Positions[i].marker = marker
-    end
-
+local function setupCustomizationPoints()
     for i = 1, #Config.Positions do
         local tempPos = Config.Positions[i]
         if (((tempPos.blip == nil or tempPos.blip.enable == nil) and Config.DefaultBlip.enable == true) or (tempPos.blip and tempPos.blip.enable)) then
@@ -366,98 +341,80 @@ CreateThread(function()
                 tempPos.blip and tempPos.blip.scale or nil
             )
         end
-    end
 
-    local waitTime
-    local playerPed, playerVeh
+        positionPoints[i] = lib.points.new({
+            coords = tempPos.pos,
+            distance = tempPos.actionDistance or Config.DefaultActionDistance,
+            positionIndex = i,
+        })
 
-    while true do
-        waitTime = getDistanceSleepFar()
-        playerPed = PlayerPedId()
-        playerVeh = GetVehiclePedIsIn(playerPed, false)
-
-        local isDead = isPlayerDead(playerPed)
-
-        if not uiOpen then
-            local playerPos = GetEntityCoords(playerPed)
-            local isInVehicle = (playerVeh ~= 0)
-            local shouldKeepTextUi = false
-
-            for i = 1, #Config.Positions do
-                local tempPos = Config.Positions[i]
-                if not tempPos.whitelistJobName or jobName == tempPos.whitelistJobName then
-                    local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
-                    local actionDistSq = actionDist * actionDist
-                    local distSq = getVectorDistanceSquared(playerPos, tempPos.pos)
-
-                    local marker = tempPos.marker
-                    if marker and marker.enable and distSq <= ((marker.drawDistance or 0.0) * (marker.drawDistance or 0.0)) then
-                        waitTime = math.min(waitTime, getDistanceSleepMarkerVisible())
-                        DrawMarker(
-                            marker.type,
-                            tempPos.pos.x + marker.positionOffset.x,
-                            tempPos.pos.y + marker.positionOffset.y,
-                            tempPos.pos.z + marker.positionOffset.z,
-                            marker.direction.x, marker.direction.y, marker.direction.z,
-                            marker.rotation.x, marker.rotation.y, marker.rotation.z,
-                            marker.scale.x, marker.scale.y, marker.scale.z,
-                            marker.color.r, marker.color.g, marker.color.b, marker.color.a,
-                            (marker.bobUpAndDownAlways or (marker.bobUpAndDownOnAccess and distSq <= actionDistSq)),
-                            marker.faceCamera,
-                            2,
-                            marker.rotating,
-                            nil, nil, false
-                        )
-                    end
-
-                    if distSq <= actionDistSq and isInVehicle then
-                        waitTime = getDistanceSleepInteract()
-
-                        local isDriver = (GetPedInVehicleSeat(playerVeh, -1) == playerPed)
-
-                        if isDriver then
-                            showCustomTextUI(getActionLabel(), 'เพื่อเปิดเปิดเมนูแต่งรถ')
-                            shouldKeepTextUi = true
-                        end
-
-                        if isInteractPressed() then
-                            if isDead then
-                                exports[Config.ExportResources.notify]:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
-                            elseif not isDriver then
-                                exports[Config.ExportResources.notify]:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
-                            else
-                                customConfigPosIndex = i
-                                openUI()
-                            end
-                        end
-
-                        break
-                    end
-                end
-            end
-
-            if not shouldKeepTextUi then
+        function positionPoints[i]:onExit()
+            if not uiOpen then
                 hideCustomTextUI()
-            end
-        else
-            hideCustomTextUI()
-            if customConfigPosIndex then
-                local tempPos = Config.Positions[customConfigPosIndex]
-                updateCash()
-
-                if playerVeh == 0 or playerVeh ~= customVehicle or isDead then
-                    closeUI(1, 1)
-                else
-                    local currentPos = GetEntityCoords(customVehicle)
-                    local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
-                    if getVectorDistanceSquared(currentPos, tempPos.pos) > (actionDist * actionDist) then
-                        closeUI(1, 1)
-                    end
-                end
             end
         end
 
-        Wait(waitTime)
+        function positionPoints[i]:nearby()
+            if uiOpen then
+                return
+            end
+
+            local position = Config.Positions[self.positionIndex]
+            if position.whitelistJobName and jobName ~= position.whitelistJobName then
+                hideCustomTextUI()
+                return
+            end
+
+            local playerPed = cache.ped
+            local playerVeh = GetVehiclePedIsIn(playerPed, false)
+            local isDriver = (playerVeh ~= 0 and GetPedInVehicleSeat(playerVeh, -1) == playerPed)
+
+            if isDriver then
+                showCustomTextUI(getActionLabel(), 'เพื่อเปิดเปิดเมนูแต่งรถ')
+            else
+                hideCustomTextUI()
+            end
+
+            if isInteractPressed() then
+                if isPlayerDead(playerPed) then
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
+                elseif not isDriver then
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
+                else
+                    customConfigPosIndex = self.positionIndex
+                    openUI()
+                end
+            end
+        end
+    end
+end
+
+CreateThread(function()
+    setupCustomizationPoints()
+
+    while true do
+        if uiOpen and customConfigPosIndex then
+            local playerPed = PlayerPedId()
+            local playerVeh = GetVehiclePedIsIn(playerPed, false)
+            local tempPos = Config.Positions[customConfigPosIndex]
+
+            hideCustomTextUI()
+            updateCash()
+
+            if playerVeh == 0 or playerVeh ~= customVehicle or isPlayerDead(playerPed) then
+                closeUI(1, 1)
+            else
+                local currentPos = GetEntityCoords(customVehicle)
+                local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
+                if getVectorDistanceSquared(currentPos, tempPos.pos) > (actionDist * actionDist) then
+                    closeUI(1, 1)
+                end
+            end
+
+            Wait(getPerformanceConfig().uiMonitorSleepMs or 250)
+        else
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
+        end
     end
 end)
 
