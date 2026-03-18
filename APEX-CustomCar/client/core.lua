@@ -771,7 +771,7 @@ RegisterNUICallback('handle', function(data)
                             canBuyMod = true
 
                             -- ตัดเงิน
-                            TriggerServerEvent('val-custom:removeCash', tempPrice)
+                            TriggerServerEvent('APEX-CustomCar:removeCash', tempPrice)
 
                             -- Log Discord
                             local vehicleModel = GetEntityModel(customVehicle)
@@ -794,7 +794,7 @@ RegisterNUICallback('handle', function(data)
                             -- ส่ง property หลังจ่ายเงิน
                             local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                             if vehiclePropAfter then
-                                TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                                TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
                             end
                         end
                     end
@@ -802,7 +802,7 @@ RegisterNUICallback('handle', function(data)
                     -- admin กดแต่ง -> อนุญาตส่ง property ได้เลย
                     local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                     if vehiclePropAfter then
-                        TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                        TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
                     end
                 end
 
@@ -827,7 +827,7 @@ RegisterNUICallback('handle', function(data)
                     end
 
                     if not isOpenByAdmin and colorPrice > 0 then
-                        TriggerServerEvent('val-custom:removeCash', colorPrice)
+                        TriggerServerEvent('APEX-CustomCar:removeCash', colorPrice)
 
                         local vehicleModel = GetEntityModel(customVehicle)
                         local vehDisplayName = GetDisplayNameFromVehicleModel(vehicleModel)
@@ -847,7 +847,7 @@ RegisterNUICallback('handle', function(data)
 
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
                         end
                     end
 
@@ -855,7 +855,7 @@ RegisterNUICallback('handle', function(data)
                     if isOpenByAdmin then
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
                         end
                     end
 

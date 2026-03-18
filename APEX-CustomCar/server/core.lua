@@ -12,7 +12,7 @@ end
 
 CreateThread(function()
     MySQL.query([[
-        CREATE TABLE IF NOT EXISTS val_custom_props (
+        CREATE TABLE IF NOT EXISTS apex_customcar_props (
             plate VARCHAR(32) PRIMARY KEY,
             props LONGTEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -29,8 +29,8 @@ local function handleRemoveCash(amount)
     xPlayer.removeMoney(amt)
 end
 
-RegisterNetEvent('val-custom:removeCash')
-AddEventHandler('val-custom:removeCash', handleRemoveCash)
+RegisterNetEvent('APEX-CustomCar:removeCash')
+AddEventHandler('APEX-CustomCar:removeCash', handleRemoveCash)
 
 local function handleUpdateProperties(props)
     local src = source
@@ -44,17 +44,17 @@ local function handleUpdateProperties(props)
     local payload = toJson(props)
     if not payload then return end
 
-    MySQL.execute('REPLACE INTO val_custom_props (plate, props) VALUES (?, ?)', { plate, payload })
+    MySQL.execute('REPLACE INTO apex_customcar_props (plate, props) VALUES (?, ?)', { plate, payload })
 end
 
-RegisterNetEvent('val-custom:updateProperties')
-AddEventHandler('val-custom:updateProperties', handleUpdateProperties)
+RegisterNetEvent('APEX-CustomCar:updateProperties')
+AddEventHandler('APEX-CustomCar:updateProperties', handleUpdateProperties)
 
 local function handleGetProperties(source, cb, plate)
     plate = normalizePlate(plate)
     if not plate or plate == '' then cb(nil) return end
 
-    MySQL.single('SELECT props FROM val_custom_props WHERE plate = ?', { plate }, function(row)
+    MySQL.single('SELECT props FROM apex_customcar_props WHERE plate = ?', { plate }, function(row)
         if row and row.props then
             local ok, decoded = pcall(json.decode, row.props)
             if ok then
@@ -66,4 +66,4 @@ local function handleGetProperties(source, cb, plate)
     end)
 end
 
-ESX.RegisterServerCallback('val-custom:getProperties', handleGetProperties)
+ESX.RegisterServerCallback('APEX-CustomCar:getProperties', handleGetProperties)

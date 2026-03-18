@@ -201,7 +201,7 @@ function animateCashTo(targetCash, smoothDecreaseOnly) {
 }
 
 function GetParentResourceName() {
-    return 'val-custom';
+    return 'APEX-CustomCar';
 }
 
 $(window).ready(function() {
