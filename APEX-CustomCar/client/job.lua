@@ -5,7 +5,7 @@ jobName = nil
 
 CreateThread(function()
     while (ESX == nil) do
-        ESX = exports['es_extended']:getSharedObject()
+        ESX = exports[Config.ExportResources.esExtended]:getSharedObject()
         Wait(100)
     end
 

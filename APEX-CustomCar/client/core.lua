@@ -171,7 +171,7 @@ local function showCustomTextUI(keyText, text)
         return
     end
 
-    exports['val-textui']:open({
+    exports[Config.ExportResources.textUI]:open({
         key = key,
         text = label
     })
@@ -185,7 +185,7 @@ local function hideCustomTextUI()
         return
     end
 
-    exports['val-textui']:close()
+    exports[Config.ExportResources.textUI]:close()
     customTextUiState.isOpen = false
     customTextUiState.key = nil
     customTextUiState.text = nil
@@ -406,9 +406,9 @@ CreateThread(function()
 
                         if isInteractPressed() then
                             if isDead then
-                                exports['mythic_notify']:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
+                                exports[Config.ExportResources.notify]:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
                             elseif not isDriver then
-                                exports['mythic_notify']:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
+                                exports[Config.ExportResources.notify]:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
                             else
                                 customConfigPosIndex = i
                                 openUI()
@@ -548,8 +548,8 @@ function openUI()
         setCustomizationNuiFocus(true, false, true)
 
         pcall(function()
-            exports['lizz_carhud']:ToggleDisplay(false)
-            exports['lizz_playerhud']:toggleHUD(false)
+            exports[Config.ExportResources.carHUD]:ToggleDisplay(false)
+            exports[Config.ExportResources.playerHUD]:toggleHUD(false)
         end)
 
         customVehiclePrice = Config.VehicleDefaultPrice
@@ -620,8 +620,8 @@ function closeUI(sendToUI, resetVehToDefault)
     setCustomizationNuiFocus(false, false, false)
 
     pcall(function()
-        exports['lizz_carhud']:ToggleDisplay(true)
-        exports['lizz_playerhud']:toggleHUD(true)
+        exports[Config.ExportResources.carHUD]:ToggleDisplay(true)
+        exports[Config.ExportResources.playerHUD]:toggleHUD(true)
     end)
 
     if (sendToUI == 1) then
@@ -685,7 +685,7 @@ local function getGarageVehicleProperties(vehicle)
     if not vehicle or vehicle == 0 then return nil end
 
     local ok, props = pcall(function()
-        return exports['val-garage']:GetVehicleProperties(vehicle)
+        return exports[Config.ExportResources.garage]:GetVehicleProperties(vehicle)
     end)
 
     if ok and type(props) == 'table' then
@@ -746,7 +746,7 @@ RegisterNUICallback('handle', function(data)
                 local blockCustom = Config.BlockCustomCategories[vehicleModelCheck]
                 if blockCustom and blockCustom[menuOption and menuOption.label or nil] then
                     updateMenu('main')
-                    exports['mythic_notify']:SendAlert('error', 'รถคันนี้ไม่สามารถแต่งส่วนนี้ได้ !', 3000)
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'รถคันนี้ไม่สามารถแต่งส่วนนี้ได้ !', 3000)
                     return
                 end
 
@@ -771,7 +771,7 @@ RegisterNUICallback('handle', function(data)
                             canBuyMod = true
 
                             -- ตัดเงิน
-                            TriggerServerEvent('APEX-CustomCar:removeCash', tempPrice)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'removeCash'), tempPrice)
 
                             -- Log Discord
                             local vehicleModel = GetEntityModel(customVehicle)
@@ -784,7 +784,7 @@ RegisterNUICallback('handle', function(data)
                                 'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(tempPrice)
 
                             pcall(function()
-                                exports['azael_dc-serverlogs']:insertData({
+                                exports[Config.ExportResources.serverLogs]:insertData({
                                     event = 'customCar',
                                     content = sendToDiscord,
                                     color = 2
@@ -794,7 +794,7 @@ RegisterNUICallback('handle', function(data)
                             -- ส่ง property หลังจ่ายเงิน
                             local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                             if vehiclePropAfter then
-                                TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
+                                TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                             end
                         end
                     end
@@ -802,7 +802,7 @@ RegisterNUICallback('handle', function(data)
                     -- admin กดแต่ง -> อนุญาตส่ง property ได้เลย
                     local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                     if vehiclePropAfter then
-                        TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
+                        TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                     end
                 end
 
@@ -827,7 +827,7 @@ RegisterNUICallback('handle', function(data)
                     end
 
                     if not isOpenByAdmin and colorPrice > 0 then
-                        TriggerServerEvent('APEX-CustomCar:removeCash', colorPrice)
+                        TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'removeCash'), colorPrice)
 
                         local vehicleModel = GetEntityModel(customVehicle)
                         local vehDisplayName = GetDisplayNameFromVehicleModel(vehicleModel)
@@ -838,7 +838,7 @@ RegisterNUICallback('handle', function(data)
                             'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(colorPrice)
 
                         pcall(function()
-                            exports['azael_dc-serverlogs']:insertData({
+                            exports[Config.ExportResources.serverLogs]:insertData({
                                 event = 'customCar',
                                 content = sendToDiscord,
                                 color = 2
@@ -847,7 +847,7 @@ RegisterNUICallback('handle', function(data)
 
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                         end
                     end
 
@@ -855,7 +855,7 @@ RegisterNUICallback('handle', function(data)
                     if isOpenByAdmin then
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('APEX-CustomCar:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                         end
                     end
 

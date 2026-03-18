@@ -201,7 +201,7 @@ function animateCashTo(targetCash, smoothDecreaseOnly) {
 }
 
 function GetParentResourceName() {
-    return 'APEX-CustomCar';
+    return window.location.hostname || 'nui-resource';
 }
 
 $(window).ready(function() {

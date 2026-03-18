@@ -1,4 +1,4 @@
-local ESX = exports['es_extended']:getSharedObject()
+local ESX = exports[Config.ExportResources.esExtended]:getSharedObject()
 
 local function toJson(data)
     local ok, encoded = pcall(json.encode, data)
@@ -29,8 +29,8 @@ local function handleRemoveCash(amount)
     xPlayer.removeMoney(amt)
 end
 
-RegisterNetEvent('APEX-CustomCar:removeCash')
-AddEventHandler('APEX-CustomCar:removeCash', handleRemoveCash)
+RegisterNetEvent(('%s:%s'):format(Config.ScriptName, 'removeCash'))
+AddEventHandler(('%s:%s'):format(Config.ScriptName, 'removeCash'), handleRemoveCash)
 
 local function handleUpdateProperties(props)
     local src = source
@@ -47,8 +47,8 @@ local function handleUpdateProperties(props)
     MySQL.execute('REPLACE INTO apex_customcar_props (plate, props) VALUES (?, ?)', { plate, payload })
 end
 
-RegisterNetEvent('APEX-CustomCar:updateProperties')
-AddEventHandler('APEX-CustomCar:updateProperties', handleUpdateProperties)
+RegisterNetEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'))
+AddEventHandler(('%s:%s'):format(Config.ScriptName, 'updateProperties'), handleUpdateProperties)
 
 local function handleGetProperties(source, cb, plate)
     plate = normalizePlate(plate)
@@ -66,4 +66,4 @@ local function handleGetProperties(source, cb, plate)
     end)
 end
 
-ESX.RegisterServerCallback('APEX-CustomCar:getProperties', handleGetProperties)
+ESX.RegisterServerCallback(('%s:%s'):format(Config.ScriptName, 'getProperties'), handleGetProperties)
