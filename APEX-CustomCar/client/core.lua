@@ -12,6 +12,8 @@ local renderingScriptCam = false
 local radarWasVisible = true
 local lastUiCash = nil
 local nuiMouseEnabled = false
+local runtimeMenus = {}
+local positionPoints = {}
 
 isOpenByAdmin = false
 
@@ -31,6 +33,29 @@ end
 local function isPlayerDead(ped)
     if not ped or ped == 0 then return true end
     return IsEntityDead(ped) or IsPedFatallyInjured(ped)
+end
+
+local function getPerformanceConfig()
+    return Config.Performance or {}
+end
+
+local function getVectorDistanceSquared(a, b)
+    local dx = a.x - b.x
+    local dy = a.y - b.y
+    local dz = a.z - b.z
+    return (dx * dx) + (dy * dy) + (dz * dz)
+end
+
+local function resetRuntimeMenus()
+    runtimeMenus = {}
+end
+
+local function getMenuDefinition(menuId)
+    if menuId == nil then
+        return nil
+    end
+
+    return runtimeMenus[menuId] or Config.Menus[menuId]
 end
 
 
@@ -171,7 +196,7 @@ local function showCustomTextUI(keyText, text)
         return
     end
 
-    exports['val-textui']:open({
+    exports[Config.ExportResources.textUI]:open({
         key = key,
         text = label
     })
@@ -185,7 +210,7 @@ local function hideCustomTextUI()
         return
     end
 
-    exports['val-textui']:close()
+    exports[Config.ExportResources.textUI]:close()
     customTextUiState.isOpen = false
     customTextUiState.key = nil
     customTextUiState.text = nil
@@ -292,54 +317,19 @@ local function applyUiLabels(menuId, menuTitle, options)
 end
 
 
-local function applyUiLabelsToMenuConfig()
-    if type(Config) ~= 'table' or type(Config.Menus) ~= 'table' then return end
-
-    for menuId, menuData in pairs(Config.Menus) do
-        if type(menuData) == 'table' then
-            if menuData.title ~= nil then
-                menuData.title = getMenuTitleForUi(menuId, menuData.title)
-            end
-
-            if type(menuData.options) == 'table' then
-                for i = 1, #menuData.options do
-                    local option = menuData.options[i]
-                    if option then
-                        local originalLabel = option.label
-                        option.label = getOptionLabelForUi(menuId, originalLabel)
-                        option.labelTH = getOptionSubLabelForUi(originalLabel, option.labelTH)
-                    end
-                end
-            end
-        end
-    end
-end
-
-applyUiLabelsToMenuConfig()
-
 CreateThread(function()
     while true do
         if (not uiOpen) then
             nuiMouseEnabled = false
             setCustomizationNuiFocus(false, false, false)
-            Wait(500)
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
         else
-            Wait(1000)
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
         end
     end
 end)
 
-CreateThread(function()
-    for i = 1, #Config.Positions do
-        local marker = Config.Positions[i].marker or {}
-        for k, v in pairs(Config.DefaultMarker) do
-            if marker[k] == nil then
-                marker[k] = v
-            end
-        end
-        Config.Positions[i].marker = marker
-    end
-
+local function setupCustomizationPoints()
     for i = 1, #Config.Positions do
         local tempPos = Config.Positions[i]
         if (((tempPos.blip == nil or tempPos.blip.enable == nil) and Config.DefaultBlip.enable == true) or (tempPos.blip and tempPos.blip.enable)) then
@@ -351,97 +341,80 @@ CreateThread(function()
                 tempPos.blip and tempPos.blip.scale or nil
             )
         end
-    end
 
-    local waitTime
-    local playerPed, playerVeh
+        positionPoints[i] = lib.points.new({
+            coords = tempPos.pos,
+            distance = tempPos.actionDistance or Config.DefaultActionDistance,
+            positionIndex = i,
+        })
 
-    while true do
-        waitTime = 1000
-        playerPed = PlayerPedId()
-        playerVeh = GetVehiclePedIsIn(playerPed, false)
-
-        local isDead = isPlayerDead(playerPed)
-
-        if not uiOpen then
-            local playerPos = GetEntityCoords(playerPed)
-            local isInVehicle = (playerVeh ~= 0)
-            local shouldKeepTextUi = false
-
-            for i = 1, #Config.Positions do
-                local tempPos = Config.Positions[i]
-                if not tempPos.whitelistJobName or jobName == tempPos.whitelistJobName then
-                    local dist = Vdist(playerPos.x, playerPos.y, playerPos.z, tempPos.pos.x, tempPos.pos.y, tempPos.pos.z)
-                    local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
-
-                    local marker = tempPos.marker
-                    if marker and marker.enable and dist <= marker.drawDistance then
-                        waitTime = 0
-                        DrawMarker(
-                            marker.type,
-                            tempPos.pos.x + marker.positionOffset.x,
-                            tempPos.pos.y + marker.positionOffset.y,
-                            tempPos.pos.z + marker.positionOffset.z,
-                            marker.direction.x, marker.direction.y, marker.direction.z,
-                            marker.rotation.x, marker.rotation.y, marker.rotation.z,
-                            marker.scale.x, marker.scale.y, marker.scale.z,
-                            marker.color.r, marker.color.g, marker.color.b, marker.color.a,
-                            (marker.bobUpAndDownAlways or (marker.bobUpAndDownOnAccess and dist <= actionDist)),
-                            marker.faceCamera,
-                            2,
-                            marker.rotating,
-                            nil, nil, false
-                        )
-                    end
-
-                    if dist <= actionDist and isInVehicle then
-                        waitTime = 0
-
-                        local isDriver = (GetPedInVehicleSeat(playerVeh, -1) == playerPed)
-
-                        if isDriver then
-                            showCustomTextUI(getActionLabel(), 'เพื่อเปิดเปิดเมนูแต่งรถ')
-                            shouldKeepTextUi = true
-                        end
-
-                        if isInteractPressed() then
-                            if isDead then
-                                exports['mythic_notify']:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
-                            elseif not isDriver then
-                                exports['mythic_notify']:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
-                            else
-                                customConfigPosIndex = i
-                                openUI()
-                            end
-                        end
-
-                        break
-                    end
-                end
-            end
-
-            if not shouldKeepTextUi then
+        positionPoints[i].onExit = function(self)
+            if not uiOpen then
                 hideCustomTextUI()
-            end
-        else
-            hideCustomTextUI()
-            if customConfigPosIndex then
-                local tempPos = Config.Positions[customConfigPosIndex]
-                updateCash()
-
-                if playerVeh == 0 or playerVeh ~= customVehicle or isDead then
-                    closeUI(1, 1)
-                else
-                    local currentPos = GetEntityCoords(customVehicle)
-                    local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
-                    if Vdist(currentPos.x, currentPos.y, currentPos.z, tempPos.pos.x, tempPos.pos.y, tempPos.pos.z) > actionDist then
-                        closeUI(1, 1)
-                    end
-                end
             end
         end
 
-        Wait(waitTime)
+        positionPoints[i].nearby = function(self)
+            if uiOpen then
+                return
+            end
+
+            local position = Config.Positions[self.positionIndex]
+            if position.whitelistJobName and jobName ~= position.whitelistJobName then
+                hideCustomTextUI()
+                return
+            end
+
+            local playerPed = cache.ped
+            local playerVeh = GetVehiclePedIsIn(playerPed, false)
+            local isDriver = (playerVeh ~= 0 and GetPedInVehicleSeat(playerVeh, -1) == playerPed)
+
+            if isDriver then
+                showCustomTextUI(getActionLabel(), 'เพื่อเปิดเปิดเมนูแต่งรถ')
+            else
+                hideCustomTextUI()
+            end
+
+            if isInteractPressed() then
+                if isPlayerDead(playerPed) then
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'ไม่สามารถแต่งรถในสถานะนี้ !', 3000)
+                elseif not isDriver then
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'ต้องนั่งตำแหน่งคนขับและอยู่ในรถ !', 3000)
+                else
+                    customConfigPosIndex = self.positionIndex
+                    openUI()
+                end
+            end
+        end
+    end
+end
+
+CreateThread(function()
+    setupCustomizationPoints()
+
+    while true do
+        if uiOpen and customConfigPosIndex then
+            local playerPed = PlayerPedId()
+            local playerVeh = GetVehiclePedIsIn(playerPed, false)
+            local tempPos = Config.Positions[customConfigPosIndex]
+
+            hideCustomTextUI()
+            updateCash()
+
+            if playerVeh == 0 or playerVeh ~= customVehicle or isPlayerDead(playerPed) then
+                closeUI(1, 1)
+            else
+                local currentPos = GetEntityCoords(customVehicle)
+                local actionDist = tempPos.actionDistance or Config.DefaultActionDistance
+                if getVectorDistanceSquared(currentPos, tempPos.pos) > (actionDist * actionDist) then
+                    closeUI(1, 1)
+                end
+            end
+
+            Wait(getPerformanceConfig().uiMonitorSleepMs or 250)
+        else
+            Wait(getPerformanceConfig().idleSleepMs or 1000)
+        end
     end
 end)
 
@@ -548,8 +521,8 @@ function openUI()
         setCustomizationNuiFocus(true, false, true)
 
         pcall(function()
-            exports['lizz_carhud']:ToggleDisplay(false)
-            exports['lizz_playerhud']:toggleHUD(false)
+            exports[Config.ExportResources.carHUD]:ToggleDisplay(false)
+            exports[Config.ExportResources.playerHUD]:toggleHUD(false)
         end)
 
         customVehiclePrice = Config.VehicleDefaultPrice
@@ -561,10 +534,12 @@ function openUI()
             end
         end
 
-        updateCash()
+        updateCash(true)
         updateVehicleCard(customVehicle)
 
-        local menu = clearMenu(Config.Menus['main'])
+        resetRuntimeMenus()
+
+        local menu = clearMenu(getMenuDefinition('main'))
         local newOptions = optionsShouldShow(menu)
         local uiMenuTitle = applyUiLabels('main', menu.title, newOptions)
         local whitelistJobName = nil
@@ -610,6 +585,7 @@ end
 function closeUI(sendToUI, resetVehToDefault)
     sendToUI = sendToUI or 0
     resetVehToDefault = resetVehToDefault or 0
+    resetRuntimeMenus()
 
     DisplayHud(true)
     if radarWasVisible then
@@ -620,8 +596,8 @@ function closeUI(sendToUI, resetVehToDefault)
     setCustomizationNuiFocus(false, false, false)
 
     pcall(function()
-        exports['lizz_carhud']:ToggleDisplay(true)
-        exports['lizz_playerhud']:toggleHUD(true)
+        exports[Config.ExportResources.carHUD]:ToggleDisplay(true)
+        exports[Config.ExportResources.playerHUD]:toggleHUD(true)
     end)
 
     if (sendToUI == 1) then
@@ -654,9 +630,10 @@ function closeUI(sendToUI, resetVehToDefault)
 end
 
 function updateMenu(menuId)
-    if (menuId == nil or Config.Menus[menuId] == nil) then return end
+    local menuConfig = getMenuDefinition(menuId)
+    if (menuId == nil or menuConfig == nil) then return end
 
-    local menu = clearMenu(Config.Menus[menuId])
+    local menu = clearMenu(menuConfig)
 
     local newOptions = optionsShouldShow(menu)
     local uiMenuTitle = applyUiLabels(menuId, menu.title, newOptions)
@@ -685,7 +662,7 @@ local function getGarageVehicleProperties(vehicle)
     if not vehicle or vehicle == 0 then return nil end
 
     local ok, props = pcall(function()
-        return exports['val-garage']:GetVehicleProperties(vehicle)
+        return exports[Config.ExportResources.garage]:GetVehicleProperties(vehicle)
     end)
 
     if ok and type(props) == 'table' then
@@ -707,7 +684,7 @@ RegisterNUICallback('handle', function(data)
             if (data.user == 'hover') then
                 if (not data or not data.menuId or not data.menuIndex) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 playSound('Faster_Click', 'RESPAWN_ONLINE_SOUNDSET')
@@ -736,7 +713,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'enter') then
                 if (not data.menuId or not data.menuIndex) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 local newOptions = optionsShouldShow(menu)
@@ -746,7 +723,7 @@ RegisterNUICallback('handle', function(data)
                 local blockCustom = Config.BlockCustomCategories[vehicleModelCheck]
                 if blockCustom and blockCustom[menuOption and menuOption.label or nil] then
                     updateMenu('main')
-                    exports['mythic_notify']:SendAlert('error', 'รถคันนี้ไม่สามารถแต่งส่วนนี้ได้ !', 3000)
+                    exports[Config.ExportResources.notify]:SendAlert('error', 'รถคันนี้ไม่สามารถแต่งส่วนนี้ได้ !', 3000)
                     return
                 end
 
@@ -771,7 +748,7 @@ RegisterNUICallback('handle', function(data)
                             canBuyMod = true
 
                             -- ตัดเงิน
-                            TriggerServerEvent('val-custom:removeCash', tempPrice)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'removeCash'), tempPrice)
 
                             -- Log Discord
                             local vehicleModel = GetEntityModel(customVehicle)
@@ -784,7 +761,7 @@ RegisterNUICallback('handle', function(data)
                                 'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(tempPrice)
 
                             pcall(function()
-                                exports['azael_dc-serverlogs']:insertData({
+                                exports[Config.ExportResources.serverLogs]:insertData({
                                     event = 'customCar',
                                     content = sendToDiscord,
                                     color = 2
@@ -794,7 +771,7 @@ RegisterNUICallback('handle', function(data)
                             -- ส่ง property หลังจ่ายเงิน
                             local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                             if vehiclePropAfter then
-                                TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                                TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                             end
                         end
                     end
@@ -802,7 +779,7 @@ RegisterNUICallback('handle', function(data)
                     -- admin กดแต่ง -> อนุญาตส่ง property ได้เลย
                     local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                     if vehiclePropAfter then
-                        TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                        TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                     end
                 end
 
@@ -827,7 +804,7 @@ RegisterNUICallback('handle', function(data)
                     end
 
                     if not isOpenByAdmin and colorPrice > 0 then
-                        TriggerServerEvent('val-custom:removeCash', colorPrice)
+                        TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'removeCash'), colorPrice)
 
                         local vehicleModel = GetEntityModel(customVehicle)
                         local vehDisplayName = GetDisplayNameFromVehicleModel(vehicleModel)
@@ -838,7 +815,7 @@ RegisterNUICallback('handle', function(data)
                             'เสียค่าใช้จ่าย: $' .. ESX.Math.GroupDigits(colorPrice)
 
                         pcall(function()
-                            exports['azael_dc-serverlogs']:insertData({
+                            exports[Config.ExportResources.serverLogs]:insertData({
                                 event = 'customCar',
                                 content = sendToDiscord,
                                 color = 2
@@ -847,7 +824,7 @@ RegisterNUICallback('handle', function(data)
 
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                         end
                     end
 
@@ -855,7 +832,7 @@ RegisterNUICallback('handle', function(data)
                     if isOpenByAdmin then
                         local vehiclePropAfter = getGarageVehicleProperties(customVehicle)
                         if vehiclePropAfter then
-                            TriggerServerEvent('val-custom:updateProperties', vehiclePropAfter)
+                            TriggerServerEvent(('%s:%s'):format(Config.ScriptName, 'updateProperties'), vehiclePropAfter)
                         end
                     end
 
@@ -882,7 +859,7 @@ RegisterNUICallback('handle', function(data)
             elseif (data.user == 'backspace') then
                 if (not data.menuId) then return end
 
-                local menu = Config.Menus[data.menuId]
+                local menu = getMenuDefinition(data.menuId)
                 if (not menu) then return end
 
                 playSound('Lose_1st', 'GTAO_FM_Events_Soundset')
@@ -927,13 +904,16 @@ function optionsShouldShow(menu)
         end
 
         if (shouldShow and menu.options[i].openSubMenu ~= nil) then
-            local subMenu = Config.Menus[menu.options[i].openSubMenu]
+            local subMenu = getMenuDefinition(menu.options[i].openSubMenu)
             local tempShouldShow = false
-            for i = 1, #subMenu.options, 1 do
-                if (subMenu.options[i].modType ~= nil) then
-                    if (GetNumVehicleModData(customVehicle, subMenu.options[i].modType) >= 0 or subMenu.options[i].openSubMenu ~= nil) then
-                        tempShouldShow = true
-                        break
+
+            if type(subMenu) == 'table' and type(subMenu.options) == 'table' then
+                for j = 1, #subMenu.options, 1 do
+                    if (subMenu.options[j].modType ~= nil) then
+                        if (GetNumVehicleModData(customVehicle, subMenu.options[j].modType) >= 0 or subMenu.options[j].openSubMenu ~= nil) then
+                            tempShouldShow = true
+                            break
+                        end
                     end
                 end
             end
@@ -966,7 +946,7 @@ function createMenu(menuId, menuOption)
         curOptionOptionIndex = curOption
     end
 
-    Config.Menus[newMenuId] = {
+    runtimeMenus[newMenuId] = {
         title = menuOption.label,
         options = {},
         onBack = function()
@@ -980,7 +960,7 @@ function createMenu(menuId, menuOption)
     }
 
     if (menuOption.customType == 'color' or menuOption.customType == 'customColor') then
-        Config.Menus[newMenuId].title = ''
+        runtimeMenus[newMenuId].title = ''
         return
     end
 
@@ -1008,7 +988,7 @@ function createMenu(menuId, menuOption)
             end
         end
 
-        table.insert(Config.Menus[newMenuId].options, {
+        table.insert(runtimeMenus[newMenuId].options, {
             label = tempLabel,
             uiMenuTitle = getMenuTitleForUi(newMenuId, menuOption.label),
             img = menuOption.img,
@@ -1027,13 +1007,13 @@ function createMenu(menuId, menuOption)
         })
 
         if (menuOption.modType == 11 or menuOption.modType == 18) then
-            local tempOption = Config.Menus[newMenuId].options[#Config.Menus[newMenuId].options]
+            local tempOption = runtimeMenus[newMenuId].options[#runtimeMenus[newMenuId].options]
             tempOption.onHover = function()
                 SetVehicleModData(customVehicle, menuOption.modType, i)
                 TaskVehicleTempAction(cache.ped, customVehicle, 31, 2000)
             end
         elseif (menuOption.modType == 'extras') then
-            local tempOption = Config.Menus[newMenuId].options[#Config.Menus[newMenuId].options]
+            local tempOption = runtimeMenus[newMenuId].options[#runtimeMenus[newMenuId].options]
 
             local isTempExtraOn = GetVehicleCurrentMod(customVehicle, 'extras', (i + 1))
 
@@ -1043,7 +1023,7 @@ function createMenu(menuId, menuOption)
             tempOption.onSelect = function()
                 isTempExtraOn = GetVehicleCurrentMod(customVehicle, 'extras', (i + 1))
 
-                Config.Menus['extras_on_off'] = {
+                runtimeMenus['extras_on_off'] = {
                     title = 'EXTRA ' .. tostring(i + 1),
                     options = {
                         {
@@ -1057,8 +1037,8 @@ function createMenu(menuId, menuOption)
                             onSelect = function()
                                 customVehicleData = GetVehicleData(customVehicle)
 
-                                Config.Menus['extras_on_off'].options[1].price = -1
-                                Config.Menus['extras_on_off'].options[2].price = tempPrice
+                                runtimeMenus['extras_on_off'].options[1].price = -1
+                                runtimeMenus['extras_on_off'].options[2].price = tempPrice
 
                                 updateMenu('extras_on_off')
 
@@ -1076,8 +1056,8 @@ function createMenu(menuId, menuOption)
                             onSelect = function()
                                 customVehicleData = GetVehicleData(customVehicle)
 
-                                Config.Menus['extras_on_off'].options[1].price = tempPrice
-                                Config.Menus['extras_on_off'].options[2].price = -1
+                                runtimeMenus['extras_on_off'].options[1].price = tempPrice
+                                runtimeMenus['extras_on_off'].options[2].price = -1
 
                                 updateMenu('extras_on_off')
 
@@ -1090,10 +1070,10 @@ function createMenu(menuId, menuOption)
                 }
 
                 if (isTempExtraOn == 0) then
-                    Config.Menus['extras_on_off'].options[2].price = -1
-                    Config.Menus['extras_on_off'].defaultOption = 1
+                    runtimeMenus['extras_on_off'].options[2].price = -1
+                    runtimeMenus['extras_on_off'].defaultOption = 1
                 else
-                    Config.Menus['extras_on_off'].options[1].price = -1
+                    runtimeMenus['extras_on_off'].options[1].price = -1
                 end
 
                 updateMenu('extras_on_off')
@@ -1144,17 +1124,6 @@ function updateUICurrentJob()
     })
 end
 
-
-CreateThread(function()
-    while true do
-        if uiOpen then
-            updateCash()
-            Wait(100)
-        else
-            Wait(500)
-        end
-    end
-end)
 
 exports('openMenuByAdmin', function()
     isOpenByAdmin = true

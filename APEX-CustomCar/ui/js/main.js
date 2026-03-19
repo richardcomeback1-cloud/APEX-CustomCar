@@ -200,15 +200,19 @@ function animateCashTo(targetCash, smoothDecreaseOnly) {
     cashAnimationFrame = requestAnimationFrame(step);
 }
 
-function GetParentResourceName() {
-    return 'val-custom';
+function getNuiResourceName() {
+    if (typeof window.GetParentResourceName === 'function') {
+        return window.GetParentResourceName();
+    }
+
+    return window.location.hostname || 'nui-resource';
 }
 
 $(window).ready(function() {
     resetUI();
     listener();
 
-    $.post(`https://${GetParentResourceName()}/uiReady`, {});
+    $.post(`https://${getNuiResourceName()}/uiReady`, {});
 });
 
 function listener() {
@@ -333,7 +337,7 @@ document.onkeydown = function(event) {
     } else if (event.which == 8) { // backspace
         event.preventDefault();
 
-        $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+        $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
             type: 'update',
             what: 'menu',
             user: 'backspace',
@@ -349,7 +353,7 @@ document.onkeydown = function(event) {
     } else if (event.which == 13) { // enter
         event.preventDefault();
 
-        $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+        $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
             type: 'update',
             what: 'menu',
             user: 'enter',
@@ -364,7 +368,7 @@ document.onkeydown = function(event) {
 
         resetUI();
         setTimeout(() => {
-            $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+            $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
                 type: "close"
             }));
         }, 400);
@@ -521,7 +525,7 @@ function menuGoto(valueHor,News) {
     });
    
 
-    $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+    $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
         type: 'update',
         what: 'menu',
         user: 'hover',
@@ -580,7 +584,7 @@ function menuColorPickerGoto(hor, vert) {
 }
 
 function postColorPickerHover() {
-    $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+    $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
         type: 'update',
         what: 'menu',
         user: 'hover',
@@ -857,7 +861,7 @@ function setColorPickerMouse(enable) {
     $('#colorPicker-holder').toggleClass('mouse-enabled', enable);
     $('body').toggleClass('mouse-enabled', enable);
 
-    $.post(`https://${GetParentResourceName()}/handle`, JSON.stringify({
+    $.post(`https://${getNuiResourceName()}/handle`, JSON.stringify({
         type: 'update',
         what: 'menu',
         user: 'toggleMouse',

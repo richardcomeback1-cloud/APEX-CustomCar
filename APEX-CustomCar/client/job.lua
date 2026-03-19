@@ -5,7 +5,7 @@ jobName = nil
 
 CreateThread(function()
     while (ESX == nil) do
-        ESX = exports['es_extended']:getSharedObject()
+        ESX = exports[Config.ExportResources.esExtended]:getSharedObject()
         Wait(100)
     end
 
@@ -16,12 +16,24 @@ CreateThread(function()
     PlayerData = ESX.PlayerData
 
     jobName = getJobName()
-    updateUICurrentJob()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
+    if updateCash then
+        updateCash(true)
+    end
 end)
 
 RegisterNetEvent('esx:playerLoaded')
 AddEventHandler('esx:playerLoaded', function(xPlayer)
     PlayerData = xPlayer
+    jobName = getJobName()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
+    if updateCash then
+        updateCash(true)
+    end
 end)
 
 RegisterNetEvent('esx:setJob')
@@ -29,7 +41,9 @@ AddEventHandler('esx:setJob', function(job)
     PlayerData.job = job
 
     jobName = getJobName()
-    updateUICurrentJob()
+    if updateUICurrentJob then
+        updateUICurrentJob()
+    end
 end)
 
 function getJobName()
@@ -49,6 +63,10 @@ AddEventHandler('esx:setMoney', function(money)
 
     if ESX and ESX.PlayerData then
         ESX.PlayerData.money = PlayerData.money
+    end
+
+    if updateCash then
+        updateCash(true)
     end
 end)
 
@@ -91,5 +109,9 @@ AddEventHandler('esx:setAccountMoney', function(account)
             name = account.name,
             money = accountMoney
         }
+    end
+
+    if updateCash then
+        updateCash(true)
     end
 end)
