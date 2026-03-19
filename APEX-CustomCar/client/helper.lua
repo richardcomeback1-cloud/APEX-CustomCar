@@ -729,7 +729,7 @@ end
 function addBlip(position, spriteId, color, title, scale)
 	spriteId = spriteId or Config.DefaultBlip.type
 	color = color or Config.DefaultBlip.color
-	title = title or Config.DefaultBlip.title
+	title = tostring(title or Config.DefaultBlip.title or ''):gsub('<[^>]+>', '')
 	scale = scale or Config.DefaultBlip.scale
 
 	local tempBlip = AddBlipForCoord(position.x, position.y, position.z)

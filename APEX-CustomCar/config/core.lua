@@ -52,7 +52,7 @@ Config.Positions = {
             enable = true,
             type = 847,
             color = 0,
-            title = "<font face='dbheavent'>Customs Car</font>",
+            title = "Customs Car",
             scale = 0.8
         },
         marker = {
@@ -71,7 +71,7 @@ Config.Positions = {
             enable = true,
             type = 847,
             color = 0,
-            title = "<font face='dbheavent'>Customs Car</font>",
+            title = "Customs Car",
             scale = 0.8
         },
         marker = {
